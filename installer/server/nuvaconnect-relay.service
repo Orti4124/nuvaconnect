@@ -1,0 +1,20 @@
+[Unit]
+Description=NuvaConnect Relay Server
+After=network.target
+
+[Service]
+Type=simple
+User=nuva
+WorkingDirectory=/opt/nuvaconnect
+Environment=NUVA_RELAY_HOST=0.0.0.0
+Environment=NUVA_RELAY_PORT=9765
+ExecStart=/opt/nuvaconnect/.venv/bin/python /opt/nuvaconnect/run_server.py
+Restart=on-failure
+RestartSec=3
+# Endurecimiento básico
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=full
+
+[Install]
+WantedBy=multi-user.target

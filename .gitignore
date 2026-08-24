@@ -1,0 +1,15 @@
+__pycache__/
+*.pyc
+.venv/
+
+# Salidas de compilación (PyInstaller / instaladores)
+dist/
+dist_installer/
+build/NuvaConnect/
+build/NuvaConnect-Host/
+*.spec.bak
+
+# NO ignorar los íconos de marca ni la documentación de build/
+!installer/windows/nuvaconnect.ico
+!installer/macos/nuvaconnect.icns
+!installer/assets/nuvaconnect.png

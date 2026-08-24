@@ -1,0 +1,7 @@
+# Caddyfile para TLS automático del relay NuvaConnect (wss://).
+# Reemplaza relay.tudominio.com por tu dominio real y apunta el DNS a este servidor.
+# Caddy gestiona el certificado Let's Encrypt automáticamente.
+
+relay.tudominio.com {
+    reverse_proxy relay:9765
+}

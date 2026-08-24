@@ -1,0 +1,41 @@
+# NuvaConnect — Despliegue del servidor relay con Docker Compose.
+#
+# Uso (desde la raíz del proyecto):
+#   docker compose -f installer/server/docker-compose.yml up -d --build
+#
+# El relay queda escuchando en el puerto 9765. Para producción con TLS,
+# ponlo detrás de un reverse proxy (ver el servicio "caddy" opcional abajo).
+
+services:
+  relay:
+    build:
+      context: ../..
+      dockerfile: installer/server/Dockerfile
+    image: nuvaconnect-relay:latest
+    container_name: nuvaconnect-relay
+    restart: unless-stopped
+    environment:
+      NUVA_RELAY_HOST: "0.0.0.0"
+      NUVA_RELAY_PORT: "9765"
+    ports:
+      - "9765:9765"
+
+  # --- OPCIONAL: TLS automático con Caddy (wss://) ------------------------
+  # Descomenta este bloque y ajusta el dominio para exponer wss://relay.tudominio.com
+  # Caddy obtiene y renueva el certificado Let's Encrypt automáticamente.
+  #
+  # caddy:
+  #   image: caddy:2
+  #   restart: unless-stopped
+  #   depends_on: [relay]
+  #   ports:
+  #     - "443:443"
+  #     - "80:80"
+  #   volumes:
+  #     - ./Caddyfile:/etc/caddy/Caddyfile
+  #     - caddy_data:/data
+  #     - caddy_config:/config
+  #
+# volumes:
+#   caddy_data:
+#   caddy_config:

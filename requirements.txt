@@ -1,0 +1,16 @@
+# NuvaConnect — dependencias del prototipo
+# Núcleo (servidor + host + viewer)
+websockets>=12.0        # transporte WebSocket (asyncio)
+cryptography>=42.0      # cifrado E2E (Fernet + PBKDF2)
+msgpack>=1.0            # serialización binaria eficiente
+
+# Host (máquina que se comparte)
+mss>=9.0                # captura de pantalla multiplataforma y rápida
+pynput>=1.7             # inyección de teclado y mouse
+Pillow>=10.0            # codificación/decodificación JPEG
+
+# Viewer (controlador) — GUI de escritorio
+PyQt6>=6.6              # interfaz gráfica y render de video
+
+# Empaquetado (opcional, solo para generar ejecutables)
+# pyinstaller>=6.0

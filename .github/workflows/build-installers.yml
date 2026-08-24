@@ -1,0 +1,123 @@
+name: Build Installers
+
+# Compila los instaladores en la nube (sin necesidad de máquinas Windows/Mac):
+#  - Windows: NuvaConnect-Setup.exe  (PyInstaller + Inno Setup)
+#  - macOS:   NuvaConnect.dmg        (PyInstaller + create-dmg)
+#  - Servidor: imagen Docker publicada en GHCR
+# Al crear un tag vX.Y.Z, además publica un Release con los instaladores.
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:   # permite ejecutarlo manualmente desde la pestaña Actions
+
+permissions:
+  contents: write      # crear releases
+  packages: write      # publicar imagen en GHCR
+
+jobs:
+  # ---------------------------------------------------------------- Windows
+  build-windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Instalar dependencias
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt pyinstaller
+
+      - name: Instalar Inno Setup
+        run: choco install innosetup --no-progress -y
+
+      - name: Empaquetar ejecutables (PyInstaller)
+        run: pyinstaller --noconfirm --clean installer/windows/nuvaconnect.spec
+
+      - name: Construir instalador (Inno Setup)
+        run: '& "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe" installer\windows\NuvaConnect.iss'
+
+      - name: Subir artefacto
+        uses: actions/upload-artifact@v4
+        with:
+          name: NuvaConnect-Windows
+          path: dist_installer/NuvaConnect-Setup.exe
+
+  # ------------------------------------------------------------------ macOS
+  build-macos:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Instalar dependencias
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt pyinstaller
+          brew install create-dmg || true
+
+      - name: Construir .dmg
+        run: bash installer/macos/build_dmg.sh
+
+      - name: Subir artefacto
+        uses: actions/upload-artifact@v4
+        with:
+          name: NuvaConnect-macOS
+          path: dist_installer/NuvaConnect.dmg
+
+  # ---------------------------------------------------- Imagen Docker (relay)
+  build-server-image:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Login en GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Metadatos de imagen
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ghcr.io/${{ github.repository }}/relay
+          tags: |
+            type=ref,event=branch
+            type=semver,pattern={{version}}
+            type=raw,value=latest
+
+      - name: Build & push
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: installer/server/Dockerfile
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+
+  # -------------------------------------------------------------- Release
+  release:
+    needs: [build-windows, build-macos]
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Descargar artefactos
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: Publicar Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            artifacts/NuvaConnect-Windows/NuvaConnect-Setup.exe
+            artifacts/NuvaConnect-macOS/NuvaConnect.dmg
+          generate_release_notes: true
