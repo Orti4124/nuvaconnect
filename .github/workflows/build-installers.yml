@@ -14,6 +14,7 @@ on:
 permissions:
   contents: write      # crear releases
   packages: write      # publicar imagen en GHCR
+  actions: read        # descargar artefactos entre jobs (download-artifact@v4)
 
 jobs:
   # ---------------------------------------------------------------- Windows
